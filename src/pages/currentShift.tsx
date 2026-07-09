@@ -1,0 +1,96 @@
+import { useOutletContext } from 'react-router-dom';
+
+type ShiftContextType = ReturnType<typeof import('../hooks/useShiftCalculator').useShiftCalculator>;
+
+export default function CurrentShift() {
+  const { targetDate, setTargetDate, currentShift } = useOutletContext<ShiftContextType>();
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value) {
+      setTargetDate(new Date(e.target.value));
+    }
+  };
+
+  const shiftDate = (days: number) => {
+    const newDate = new Date(targetDate);
+    newDate.setDate(newDate.getDate() + days);
+    setTargetDate(newDate);
+  };
+
+  const formattedDateValue = targetDate.toISOString().split('T')[0];
+
+  return (
+    <div className="grid md:grid-cols-2 gap-8 animate-fade-in">
+      <div className="card bg-base-100 shadow-xl border border-base-200">
+        <div className="card-body items-center text-center w-full">
+          <h2 className="card-title text-xl mb-4 text-base-content/80">Tarih Sorgula</h2>
+          
+          <input 
+            type="date" 
+            value={formattedDateValue}
+            onChange={handleDateChange}
+            className="input input-bordered w-full max-w-xs text-lg focus:outline-none focus:ring-2 focus:ring-primary" 
+          />
+          
+          <div className="flex items-center justify-between w-full max-w-xs mt-6 gap-2">
+            <button 
+              onClick={() => shiftDate(-1)} 
+              className="btn btn-sm flex-1 bg-green-700 hover:bg-green-600 text-white border-none"
+            >
+              &larr; Dün
+            </button>
+            
+            <span className="text-sm font-semibold text-base-content whitespace-nowrap px-2">
+              {targetDate.toLocaleDateString('tr-TR', { 
+                weekday: 'short', 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+              })}
+            </span>
+            
+            <button 
+              onClick={() => shiftDate(1)} 
+              className="btn btn-sm flex-1 bg-green-700 hover:bg-green-600 text-white border-none"
+            >
+              Yarın &rarr;
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between w-full max-w-xs mt-3 gap-3">
+            <button 
+              onClick={() => shiftDate(-7)} 
+              className="btn btn-sm flex-1 bg-indigo-700 hover:bg-indigo-600 text-white border-none"
+            >
+              &laquo; Geçmiş Hafta
+            </button>
+            
+            <button 
+              onClick={() => shiftDate(7)} 
+              className="btn btn-sm flex-1 bg-indigo-700 hover:bg-indigo-600 text-white border-none"
+            >
+              Gelecek Hafta &raquo;
+            </button>
+          </div>
+          
+        </div>
+      </div>
+
+      <div className="card bg-base-100 shadow-xl border border-base-200">
+        <div className="card-body items-center justify-center text-center">
+          <h2 className="card-title text-base-content/80 mb-2">Güncel Vardiya</h2>
+          
+          <div className="text-4xl font-black text-primary my-4">
+            {currentShift.name}
+          </div>
+          
+          {currentShift.note && (
+            <div className={`mt-2 font-bold px-4 py-2 rounded-lg ${currentShift.id === 1 ? 'bg-error/20 text-error border border-error/50' : 'text-info'}`}>
+              {currentShift.note}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
