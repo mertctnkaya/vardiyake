@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { useAppStore } from '../store/useAppStore';
 
 const SHIFTS = [
   { id: 0, name: 'Gündüz', note: 'Normal vardiya' },
@@ -10,7 +11,15 @@ const EPOCH_DATE = new Date('2026-07-06T00:00:00');
 const MS_PER_WEEK = 1000 * 60 * 60 * 24 * 7;
 
 export function useShiftCalculator() {
+  const { settings } = useAppStore();
   const [targetDate, setTargetDate] = useState<Date>(new Date());
+
+  // Eğer kullanıcı ayar yapmadıysa varsayılan 2026-07-06 kullan, yaptıysa onu kullan
+  const epochDate = useMemo(() => {
+    return settings?.shift_epoch_date 
+      ? new Date(settings.shift_epoch_date + 'T00:00:00') 
+      : new Date('2026-07-06T00:00:00');
+  }, [settings]);
 
   const currentShift = useMemo(() => {
     const dayOfWeek = targetDate.getDay();
@@ -20,7 +29,7 @@ export function useShiftCalculator() {
     mondayDate.setDate(targetDate.getDate() + diffToMonday);
     mondayDate.setHours(0, 0, 0, 0);
 
-    const diffMs = mondayDate.getTime() - EPOCH_DATE.getTime();
+    const diffMs = mondayDate.getTime() - epochDate.getTime();
     const deltaWeeks = Math.floor(diffMs / MS_PER_WEEK);
     const shiftIndex = ((deltaWeeks % 3) + 3) % 3;
     
@@ -37,7 +46,7 @@ export function useShiftCalculator() {
     }
 
     return shift;
-  }, [targetDate]);
+  }, [targetDate, epochDate]);
 
   const scheduleList = useMemo(() => {
     const list = [];

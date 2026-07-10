@@ -17,20 +17,25 @@ function Layout() {
   const { user, setSession } = useAppStore();
   const navigate = useNavigate();
 
-  // Supabase Auth Dinleyicisi
   useEffect(() => {
-    // Sayfa ilk yüklendiğinde mevcut oturumu al
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session) loadUserSettings(session.user.id); 
     });
 
-    // Oturum değişikliklerini (giriş, çıkış, token yenileme) canlı dinle
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) loadUserSettings(session.user.id);
+      else useAppStore.getState().setSettings(null);
     });
 
     return () => subscription.unsubscribe();
   }, [setSession]);
+  
+  const loadUserSettings = async (userId: string) => {
+    const { data } = await supabase.from('user_settings').select('*').eq('user_id', userId).single();
+    if (data) useAppStore.getState().setSettings(data);
+  };
 
   const closeDropdown = () => {
     const elem = document.activeElement as HTMLElement;

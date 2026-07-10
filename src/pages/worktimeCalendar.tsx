@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 
@@ -13,6 +13,7 @@ interface DayDetail {
 }
 
 export default function WorktimeCalendar() {
+  const { settings } = useAppStore();
   const { user } = useAppStore();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -30,7 +31,11 @@ export default function WorktimeCalendar() {
   const currentYear = baseDate.getFullYear();
   const currentMonth = baseDate.getMonth();
 
-  const EMPLOYMENT_START_DATE = new Date('2026-06-09T00:00:00'); 
+  const employmentStartDate = useMemo(() => {
+    return settings?.employment_start_date 
+      ? new Date(settings.employment_start_date + 'T00:00:00') 
+      : new Date('2026-06-09T00:00:00');
+  }, [settings]);
   const EPOCH_DATE = new Date('2026-07-06T00:00:00'); 
   const MS_PER_WEEK = 1000 * 60 * 60 * 24 * 7;
 
@@ -154,7 +159,7 @@ export default function WorktimeCalendar() {
             const isToday = item.date.toDateString() === actualToday.toDateString();
             
             // YENİ MANTIK: Bu gün, işe başlama tarihinden önce mi?
-            const isBeforeEmployment = item.date < EMPLOYMENT_START_DATE;
+            const isBeforeEmployment = item.date < employmentStartDate;
             
             let cellBg = "bg-base-100 hover:bg-base-200 cursor-pointer";
             let textColor = "text-base-content"; 
