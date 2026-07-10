@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAppStore } from '../store/useAppStore';
 
 interface DayDetail {
   date: Date;
@@ -11,6 +13,9 @@ interface DayDetail {
 }
 
 export default function WorktimeCalendar() {
+  const { user } = useAppStore();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   const [selectedDay, setSelectedDay] = useState<DayDetail | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -84,6 +89,11 @@ export default function WorktimeCalendar() {
 
   const handleDayClick = (dayData: DayDetail, isBeforeEmployment: boolean) => {
     if (isBeforeEmployment) return; 
+
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
 
     setSelectedDay(dayData);
     setDayStatus('normal'); 
@@ -279,6 +289,28 @@ export default function WorktimeCalendar() {
             <div className="modal-action mt-4 flex justify-end gap-3">
               <button className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>İptal</button>
               <button className="btn px-6 bg-indigo-600 hover:bg-indigo-700 text-white border-none transition-colors shadow-lg shadow-indigo-900/50" onClick={() => setIsModalOpen(false)}>Kaydet (UI)</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAuthModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer" onClick={() => setShowAuthModal(false)}></div>
+          <div className="bg-base-200 border border-base-300 rounded-2xl p-6 sm:p-8 relative z-10 shadow-2xl w-full max-w-sm flex flex-col animate-fade-in text-center">
+            
+            <div className="mx-auto bg-indigo-900/30 text-indigo-400 p-4 rounded-full mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            </div>
+
+            <h3 className="font-bold text-xl text-base-content mb-2">Giriş Yapmanız Gerekiyor</h3>
+            <p className="text-base-content/70 mb-6 text-sm">Bu güne dair mesai durumu veya not girmek için oturum açmalısınız.</p>
+            
+            <div className="flex flex-col gap-3">
+              <Link to="/login" className="btn bg-indigo-600 hover:bg-indigo-700 text-white border-none">Giriş Yap / Kayıt Ol</Link>
+              <button className="btn btn-ghost hover:bg-base-300 text-base-content/80" onClick={() => setShowAuthModal(false)}>İptal</button>
             </div>
           </div>
         </div>

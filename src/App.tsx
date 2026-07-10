@@ -1,5 +1,9 @@
-import { BrowserRouter, Routes, Route, Link, Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Link, Outlet, useNavigate } from 'react-router-dom';
 import { useShiftCalculator } from './hooks/useShiftCalculator';
+import { supabase } from './lib/supabaseClient';
+import { useAppStore } from './store/useAppStore';
+
 import CurrentShift from './pages/currentShift';
 import NextWeeks from './pages/nextWeeks';
 import WorktimeCalendar from './pages/worktimeCalendar';
@@ -10,17 +14,39 @@ import Register from './pages/register';
 
 function Layout() {
   const shiftContext = useShiftCalculator();
+  const { user, setSession } = useAppStore();
+  const navigate = useNavigate();
+
+  // Supabase Auth Dinleyicisi
+  useEffect(() => {
+    // Sayfa ilk yüklendiğinde mevcut oturumu al
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Oturum değişikliklerini (giriş, çıkış, token yenileme) canlı dinle
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setSession]);
 
   const closeDropdown = () => {
     const elem = document.activeElement as HTMLElement;
-    if (elem) {
-      elem.blur();
-    }
+    if (elem) elem.blur();
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    closeDropdown();
+    navigate('/login');
   };
 
   return (
     <div className="min-h-screen bg-base-300 flex flex-col items-center">
       <div className="navbar bg-base-100 shadow-xl mb-8 w-full z-50">
+        {/* Navbar Start (Aynı kalıyor) */}
         <div className="navbar-start">
           <div className="dropdown">
             <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
@@ -36,13 +62,26 @@ function Layout() {
               <li><Link to="/calculations" onClick={closeDropdown}>Hesaplamalar</Link></li>
               <li><Link to="/settings" onClick={closeDropdown}>Ayarlar</Link></li>
               <div className="divider my-1"></div>
-              <li><Link to="/login" onClick={closeDropdown} className="text-indigo-400 font-bold">Giriş Yap</Link></li>
-              <li><Link to="/register" onClick={closeDropdown}>Kayıt Ol</Link></li>
+              
+              {/* Kullanıcı giriş yapmışsa menüyü değiştir */}
+              {user ? (
+                <>
+                  <li className="menu-title px-4 py-1 text-xs opacity-50">Hesap</li>
+                  <li className="px-4 py-2 font-bold text-indigo-400">{user.user_metadata?.name}</li>
+                  <li><button onClick={handleLogout} className="text-error">Çıkış Yap</button></li>
+                </>
+              ) : (
+                <>
+                  <li><Link to="/login" onClick={closeDropdown} className="text-indigo-400 font-bold">Giriş Yap</Link></li>
+                  <li><Link to="/register" onClick={closeDropdown}>Kayıt Ol</Link></li>
+                </>
+              )}
             </ul>
           </div>
           <Link to="/" className="btn btn-ghost text-xl text-indigo-500 font-black tracking-wide">Vardiyake</Link>
         </div>
         
+        {/* Navbar Center (Aynı kalıyor) */}
         <div className="navbar-center hidden lg:flex">
           <ul className="menu menu-horizontal px-1 font-medium text-base-content">
             <li><Link to="/">Güncel Vardiya</Link></li>
@@ -53,11 +92,25 @@ function Layout() {
           </ul>
         </div>
         
+        {/* Navbar End - Giriş yapılmışsa kullanıcı adı ve çıkış butonu gösterilir */}
         <div className="navbar-end hidden lg:flex gap-3 pr-2">
-          <Link to="/login" className="btn btn-ghost btn-sm text-base-content hover:bg-base-200">Giriş Yap</Link>
-          <Link to="/register" className="btn btn-sm bg-indigo-600 hover:bg-indigo-700 text-white border-none transition-colors shadow-lg shadow-indigo-900/50">
-            Kayıt Ol
-          </Link>
+          {user ? (
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-semibold text-base-content/80">
+                {user.user_metadata?.name}
+              </span>
+              <button onClick={handleLogout} className="btn btn-sm btn-outline btn-error">
+                Çıkış
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link to="/login" className="btn btn-ghost btn-sm text-base-content hover:bg-base-200">Giriş Yap</Link>
+              <Link to="/register" className="btn btn-sm bg-indigo-600 hover:bg-indigo-700 text-white border-none transition-colors shadow-lg shadow-indigo-900/50">
+                Kayıt Ol
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

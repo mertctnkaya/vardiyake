@@ -1,9 +1,11 @@
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, Link } from 'react-router-dom';
+import { useAppStore } from '../store/useAppStore'; // YENİ: Kullanıcı bilgisini çekmek için
 
 type ShiftContextType = ReturnType<typeof import('../hooks/useShiftCalculator').useShiftCalculator>;
 
 export default function CurrentShift() {
   const { targetDate, setTargetDate, currentShift } = useOutletContext<ShiftContextType>();
+  const { user } = useAppStore(); // Ziyaretçi mi giriş yapmış mı?
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value) {
@@ -35,7 +37,7 @@ export default function CurrentShift() {
           <div className="flex items-center justify-between w-full max-w-xs mt-6 gap-2">
             <button 
               onClick={() => shiftDate(-1)} 
-              className="btn btn-sm flex-1 bg-green-700 hover:bg-green-600 text-white border-none"
+              className="btn btn-sm flex-1 bg-slate-700 hover:bg-slate-600 text-white border-none"
             >
               &larr; Dün
             </button>
@@ -51,7 +53,7 @@ export default function CurrentShift() {
             
             <button 
               onClick={() => shiftDate(1)} 
-              className="btn btn-sm flex-1 bg-green-700 hover:bg-green-600 text-white border-none"
+              className="btn btn-sm flex-1 bg-slate-700 hover:bg-slate-600 text-white border-none"
             >
               Yarın &rarr;
             </button>
@@ -60,16 +62,16 @@ export default function CurrentShift() {
           <div className="flex items-center justify-between w-full max-w-xs mt-3 gap-3">
             <button 
               onClick={() => shiftDate(-7)} 
-              className="btn btn-sm flex-1 bg-indigo-700 hover:bg-indigo-600 text-white border-none"
+              className="btn btn-sm flex-1 bg-indigo-600 hover:bg-indigo-500 text-white border-none"
             >
-              &laquo; Geçmiş Hafta
+              &laquo; Önceki Hf.
             </button>
             
             <button 
               onClick={() => shiftDate(7)} 
-              className="btn btn-sm flex-1 bg-indigo-700 hover:bg-indigo-600 text-white border-none"
+              className="btn btn-sm flex-1 bg-indigo-600 hover:bg-indigo-500 text-white border-none"
             >
-              Gelecek Hafta &raquo;
+              Gelecek Hf. &raquo;
             </button>
           </div>
           
@@ -91,6 +93,22 @@ export default function CurrentShift() {
           )}
         </div>
       </div>
+
+      {/* YENİ: ZİYARETÇİ AFİŞİ (Auth Banner) */}
+      {!user && (
+        <div className="md:col-span-2 mt-2 bg-indigo-900/10 border border-indigo-500/20 rounded-2xl p-6 sm:p-8 text-center shadow-lg">
+          <h3 className="text-xl sm:text-2xl font-bold text-indigo-400 mb-2">Kendinize Göre Özelleştirin</h3>
+          <p className="text-base-content/70 mb-6 max-w-2xl mx-auto">
+            Şu an örnek bir vardiya döngüsünü görüntülüyorsunuz. Kendi işe başlama tarihinizi, 
+            yevmiye ayarlarınızı ve devamsızlık durumlarınızı kaydedip otomatik bordro hesabı yaptırmak için ücretsiz hesap oluşturun.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-3">
+            <Link to="/login" className="btn btn-outline border-indigo-500/50 text-indigo-400 hover:bg-indigo-500 hover:text-white">Giriş Yap</Link>
+            <Link to="/register" className="btn bg-indigo-600 hover:bg-indigo-700 text-white border-none">Hemen Kayıt Ol</Link>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
