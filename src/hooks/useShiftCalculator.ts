@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 
 const SHIFTS = [
-  { id: 0, name: '08:00 - 16:00', note: 'Normal vardiya' },
-  { id: 1, name: '00:00 - 08:00', note: 'DİKKAT: Önceki gece 23:00 servise biniş!' },
-  { id: 2, name: '16:00 - 24:00', note: 'Akşam vardiyası' }
+  { id: 0, name: 'Gündüz', note: 'Normal vardiya' },
+  { id: 1, name: 'Gece', note: 'DİKKAT: Pazar gecesi 23:00 servise biniş!' },
+  { id: 2, name: 'Akşam', note: 'Akşam vardiyası' }
 ];
 
 const EPOCH_DATE = new Date('2026-07-06T00:00:00'); 
@@ -14,7 +14,6 @@ export function useShiftCalculator() {
 
   const currentShift = useMemo(() => {
     const dayOfWeek = targetDate.getDay();
-    // Pazar(0) ise bir önceki pazartesiye git (-6), değilse kendi haftasının pazartesisine git
     const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     
     const mondayDate = new Date(targetDate);
@@ -34,7 +33,6 @@ export function useShiftCalculator() {
       const nextShift = SHIFTS[nextWeekIndex];
       
       shift.note = nextShift.id === 1 ? nextShift.note : '';
-      // Rengini kırmızı yapabilmek için idyi eziyoruz
       shift.id = nextShift.id === 1 ? 1 : -1; 
     }
 
