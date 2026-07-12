@@ -51,7 +51,6 @@ function Layout() {
   return (
     <div className="min-h-screen bg-base-300 flex flex-col items-center">
       <div className="navbar bg-base-100 shadow-xl mb-8 w-full z-50">
-        {/* Navbar Start (Aynı kalıyor) */}
         <div className="navbar-start">
           <div className="dropdown">
             <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
@@ -68,7 +67,6 @@ function Layout() {
               <li><Link to="/settings" onClick={closeDropdown}>Ayarlar</Link></li>
               <div className="divider my-1"></div>
               
-              {/* Kullanıcı giriş yapmışsa menüyü değiştir */}
               {user ? (
                 <>
                   <li className="menu-title px-4 py-1 text-xs opacity-50">Hesap</li>
@@ -86,7 +84,6 @@ function Layout() {
           <Link to="/" className="btn btn-ghost text-xl text-indigo-500 font-black tracking-wide">Vardiyake</Link>
         </div>
         
-        {/* Navbar Center (Aynı kalıyor) */}
         <div className="navbar-center hidden lg:flex">
           <ul className="menu menu-horizontal px-1 font-medium text-base-content">
             <li><Link to="/">Güncel Vardiya</Link></li>
@@ -97,7 +94,6 @@ function Layout() {
           </ul>
         </div>
         
-        {/* Navbar End - Giriş yapılmışsa kullanıcı adı ve çıkış butonu gösterilir */}
         <div className="navbar-end hidden lg:flex gap-3 pr-2">
           {user ? (
             <div className="flex items-center gap-4">

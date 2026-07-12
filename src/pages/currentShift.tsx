@@ -1,11 +1,14 @@
-import { useOutletContext, Link } from 'react-router-dom';
-import { useAppStore } from '../store/useAppStore'; // YENİ: Kullanıcı bilgisini çekmek için
+import { useOutletContext, Link } from "react-router-dom";
+import { useAppStore } from "../store/useAppStore";
 
-type ShiftContextType = ReturnType<typeof import('../hooks/useShiftCalculator').useShiftCalculator>;
+type ShiftContextType = ReturnType<
+  typeof import("../hooks/useShiftCalculator").useShiftCalculator
+>;
 
 export default function CurrentShift() {
-  const { targetDate, setTargetDate, currentShift } = useOutletContext<ShiftContextType>();
-  const { user } = useAppStore(); // Ziyaretçi mi giriş yapmış mı?
+  const { targetDate, setTargetDate, currentShift } =
+    useOutletContext<ShiftContextType>();
+  const { user } = useAppStore();
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value) {
@@ -19,40 +22,42 @@ export default function CurrentShift() {
     setTargetDate(newDate);
   };
 
-  const formattedDateValue = targetDate.toISOString().split('T')[0];
+  const formattedDateValue = targetDate.toISOString().split("T")[0];
 
   return (
     <div className="grid md:grid-cols-2 gap-8 animate-fade-in">
       <div className="card bg-base-100 shadow-xl border border-base-200">
         <div className="card-body items-center text-center w-full">
-          <h2 className="card-title text-xl mb-4 text-base-content/80">Tarih Sorgula</h2>
-          
-          <input 
-            type="date" 
+          <h2 className="card-title text-xl mb-4 text-base-content/80">
+            Tarih Sorgula
+          </h2>
+
+          <input
+            type="date"
             value={formattedDateValue}
             onChange={handleDateChange}
-            className="input input-bordered w-full max-w-xs text-lg focus:outline-none focus:ring-2 focus:ring-primary" 
+            className="input input-bordered w-full max-w-xs text-lg focus:outline-none focus:ring-2 focus:ring-primary"
           />
-          
+
           <div className="flex items-center justify-between w-full max-w-xs mt-6 gap-2">
-            <button 
-              onClick={() => shiftDate(-1)} 
+            <button
+              onClick={() => shiftDate(-1)}
               className="btn btn-sm flex-1 bg-slate-700 hover:bg-slate-600 text-white border-none"
             >
               &larr; Dün
             </button>
-            
+
             <span className="text-sm font-semibold text-base-content whitespace-nowrap px-2">
-              {targetDate.toLocaleDateString('tr-TR', { 
-                weekday: 'short', 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
+              {targetDate.toLocaleDateString("tr-TR", {
+                weekday: "short",
+                year: "numeric",
+                month: "short",
+                day: "numeric",
               })}
             </span>
-            
-            <button 
-              onClick={() => shiftDate(1)} 
+
+            <button
+              onClick={() => shiftDate(1)}
               className="btn btn-sm flex-1 bg-slate-700 hover:bg-slate-600 text-white border-none"
             >
               Yarın &rarr;
@@ -60,55 +65,76 @@ export default function CurrentShift() {
           </div>
 
           <div className="flex items-center justify-between w-full max-w-xs mt-3 gap-3">
-            <button 
-              onClick={() => shiftDate(-7)} 
+            <button
+              onClick={() => shiftDate(-7)}
               className="btn btn-sm flex-1 bg-indigo-600 hover:bg-indigo-500 text-white border-none"
             >
               &laquo; Önceki Hf.
             </button>
-            
-            <button 
-              onClick={() => shiftDate(7)} 
+
+            <button
+              onClick={() => shiftDate(7)}
               className="btn btn-sm flex-1 bg-indigo-600 hover:bg-indigo-500 text-white border-none"
             >
               Gelecek Hf. &raquo;
             </button>
           </div>
-          
+          <button
+            onClick={() => setTargetDate(new Date())}
+            className="btn btn-sm bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-md"
+          >
+            Bugün
+          </button>
         </div>
       </div>
 
       <div className="card bg-base-100 shadow-xl border border-base-200">
         <div className="card-body items-center justify-center text-center">
-          <h2 className="card-title text-base-content/80 mb-2">Güncel Vardiya</h2>
-          
+          <h2 className="card-title text-base-content/80 mb-2">
+            Güncel Vardiya
+          </h2>
+
           <div className="text-4xl font-black text-primary my-4">
             {currentShift.name}
           </div>
-          
+
           {currentShift.note && (
-            <div className={`mt-2 font-bold px-4 py-2 rounded-lg ${currentShift.id === 1 ? 'bg-error/20 text-error border border-error/50' : 'text-info'}`}>
+            <div
+              className={`mt-2 font-bold px-4 py-2 rounded-lg ${currentShift.id === 1 ? "bg-error/20 text-error border border-error/50" : "text-info"}`}
+            >
               {currentShift.note}
             </div>
           )}
         </div>
       </div>
 
-      {/* YENİ: ZİYARETÇİ AFİŞİ (Auth Banner) */}
       {!user && (
         <div className="md:col-span-2 mt-2 bg-indigo-900/10 border border-indigo-500/20 rounded-2xl p-6 sm:p-8 text-center shadow-lg">
-          <h3 className="text-xl sm:text-2xl font-bold text-indigo-400 mb-2">Kendinize Göre Özelleştirin</h3>
+          <h3 className="text-xl sm:text-2xl font-bold text-indigo-400 mb-2">
+            Kendinize Göre Özelleştirin
+          </h3>
           <p className="text-base-content/70 mb-6 max-w-2xl mx-auto">
-            Şu an örnek bir vardiya döngüsünü görüntülüyorsunuz. Kendi işe başlama tarihinizi, 
-            yevmiye ayarlarınızı ve devamsızlık durumlarınızı kaydedip otomatik bordro hesabı yaptırmak için ücretsiz hesap oluşturun.
+            Şu an örnek bir vardiya döngüsünü görüntülüyorsunuz. Kendi işe
+            başlama tarihinizi, yevmiye ayarlarınızı ve devamsızlık
+            durumlarınızı kaydedip otomatik bordro hesabı yaptırmak için
+            ücretsiz hesap oluşturun.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-3">
-            <Link to="/login" className="btn btn-outline border-indigo-500/50 text-indigo-400 hover:bg-indigo-500 hover:text-white">Giriş Yap</Link>
-            <Link to="/register" className="btn bg-indigo-600 hover:bg-indigo-700 text-white border-none">Hemen Kayıt Ol</Link>
+            <Link
+              to="/login"
+              className="btn btn-outline border-indigo-500/50 text-indigo-400 hover:bg-indigo-500 hover:text-white"
+            >
+              Giriş Yap
+            </Link>
+            <Link
+              to="/register"
+              className="btn bg-indigo-600 hover:bg-indigo-700 text-white border-none"
+            >
+              Hemen Kayıt Ol
+            </Link>
           </div>
         </div>
       )}
-
     </div>
   );
 }

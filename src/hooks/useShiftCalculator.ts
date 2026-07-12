@@ -3,7 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 
 const SHIFTS = [
   { id: 0, name: 'Gündüz', note: 'Normal vardiya' },
-  { id: 1, name: 'Gece', note: 'DİKKAT: Pazar gecesi 23:00 servise biniş!' },
+  { id: 1, name: 'Gece', note: 'DİKKAT: Bu gece akşamından servise biniş!' },
   { id: 2, name: 'Akşam', note: 'Akşam vardiyası' }
 ];
 
@@ -14,7 +14,6 @@ export function useShiftCalculator() {
   const { settings } = useAppStore();
   const [targetDate, setTargetDate] = useState<Date>(new Date());
 
-  // Eğer kullanıcı ayar yapmadıysa varsayılan 2026-07-06 kullan, yaptıysa onu kullan
   const epochDate = useMemo(() => {
     return settings?.shift_epoch_date 
       ? new Date(settings.shift_epoch_date + 'T00:00:00') 
