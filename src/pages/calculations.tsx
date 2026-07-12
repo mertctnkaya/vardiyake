@@ -69,7 +69,7 @@ export default function Calculations() {
       const year = payrollDate.getFullYear();
       const month = payrollDate.getMonth();
       
-      const firstDay = new Date(year, month, 1);
+      //const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
       const daysInMonth = lastDay.getDate();
 

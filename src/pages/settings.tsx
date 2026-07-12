@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Settings() {
   const { user, setSettings } = useAppStore();
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [_showAuthModal, setShowAuthModal] = useState(false);
   
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -32,7 +31,7 @@ export default function Settings() {
     async function loadSettings() {
       if (!user) return;
       setIsLoading(true);
-      const { data, error } = await supabase.from('user_settings').select('*').eq('user_id', user.id).single();
+      const { data } = await supabase.from('user_settings').select('*').eq('user_id', user.id).single();
 
       if (data) {
         setWorkType(data.work_type || '3-shift');
