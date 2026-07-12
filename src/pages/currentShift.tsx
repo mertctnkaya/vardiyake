@@ -79,12 +79,14 @@ export default function CurrentShift() {
               Gelecek Hf. &raquo;
             </button>
           </div>
-          <button
-            onClick={() => setTargetDate(new Date())}
-            className="btn btn-sm bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-md"
-          >
-            Bugün
-          </button>
+          <div className="flex items-center justify-between w-full max-w-xs mt-2 gap-3">
+            <button
+              onClick={() => setTargetDate(new Date())}
+              className="btn btn-sm flex-1  bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-md"
+            >
+              Bugün
+            </button>
+          </div>
         </div>
       </div>
 
