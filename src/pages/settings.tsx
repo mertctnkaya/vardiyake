@@ -26,7 +26,7 @@ export default function Settings() {
   
   const [saturdayMultiplier, setSaturdayMultiplier] = useState('1.5'); 
   const [weekendMultiplier, setWeekendMultiplier] = useState('2'); // Pazar için
-  const [holidayMultiplier, setHolidayMultiplier] = useState('3'); // Resmi Tatil
+  const [holidayMultiplier, _setHolidayMultiplier] = useState('3'); // Resmi Tatil
 
   useEffect(() => {
     async function loadSettings() {
