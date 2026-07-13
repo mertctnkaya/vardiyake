@@ -26,6 +26,7 @@ export default function Settings() {
   
   const [saturdayMultiplier, setSaturdayMultiplier] = useState('1.5'); 
   const [weekendMultiplier, setWeekendMultiplier] = useState('2'); // Pazar için
+  const [holidayMultiplier, setHolidayMultiplier] = useState('3'); // Resmi Tatil
 
   useEffect(() => {
     async function loadSettings() {
@@ -109,6 +110,7 @@ export default function Settings() {
       night_bonus_percent: Number(nightBonus) || 0,
       saturday_multiplier: Number(saturdayMultiplier) || 1.5,
       weekend_multiplier: Number(weekendMultiplier) || 2,
+      holiday_multiplier: Number(holidayMultiplier) || 2,
       updated_at: new Date().toISOString()
     };
 
@@ -286,6 +288,48 @@ export default function Settings() {
             <button onClick={handleSaveSettings} disabled={isSaving || isLoading} className="btn btn-wide bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-900/50">
               {isSaving ? <span className="loading loading-spinner"></span> : 'Ayarları Kaydet'}
             </button>
+          </div>
+
+          {/* ========================================================= */}
+          {/* YILLIK İZİN HAK EDİŞ TABLOSU (TÜRKİYE KANUNLARI) */}
+          {/* ========================================================= */}
+          <div className="mt-8 border-t border-base-300 pt-8 animate-fade-in">
+             <h3 className="text-lg font-bold text-indigo-400 mb-4 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                </svg>
+                Yıllık İzin Durumu
+             </h3>
+             
+             {(() => {
+                const start = new Date(employmentStartDate);
+                const today = new Date();
+                const yearsWorked = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+                
+                let earnedLeave = 0;
+                for (let i = 1; i <= yearsWorked; i++) {
+                   if (i <= 5) earnedLeave += 14;
+                   else if (i < 15) earnedLeave += 20;
+                   else earnedLeave += 26;
+                }
+
+                return (
+                  <div className="bg-[#1e2329] p-6 rounded-xl border border-base-300 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div>
+                      <p className="text-sm text-base-content/70">Mevcut Kıdeminiz</p>
+                      <p className="text-2xl font-bold text-base-content">{yearsWorked} Yıl</p>
+                    </div>
+                    <div className="divider sm:divider-horizontal"></div>
+                    <div>
+                      <p className="text-sm text-base-content/70">Kanuni Hak Edilen Toplam İzin</p>
+                      <p className="text-2xl font-bold text-purple-400">{earnedLeave} Gün</p>
+                    </div>
+                    <div className="w-full sm:w-auto text-sm text-base-content/50 italic bg-base-100 p-3 rounded-lg border border-base-300">
+                      * 1-5 yıl: 14 Gün <br/> * 5-15 yıl: 20 Gün <br/> * 15+ yıl: 26 Gün baz alınmıştır.
+                    </div>
+                  </div>
+                );
+             })()}
           </div>
         </div>
       </div>

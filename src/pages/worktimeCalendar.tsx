@@ -334,15 +334,32 @@ export default function WorktimeCalendar() {
         
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
           {(() => {
-            let normal = 0, overtimeHours = 0, lateHours = 0, absent = 0, leave = 0, notes = 0;
-            console.log(workLogs);
-            Object.values(workLogs).forEach(log => {
-              if (log.status === 'normal') normal++;
-              if (log.status === 'overtime') { normal++; overtimeHours += (Number(log.hours) || 0); }
-              if (log.status === 'late' || log.status === 'partial_leave') { normal++; lateHours += (Number(log.hours) || 0); }
-              if (log.status === 'absent') absent++;
-              if (log.status === 'leave') leave++;
-              if (log.note && log.note.trim() !== '') notes++;
+            let normal = 0, overtimeHours = 0, lateHours = 0, absent = 0, leave = 0, weekendPaid = 0;
+            
+            calendarDays.forEach(item => {
+              if (!item.isCurrentMonth || item.date < employmentStartDate) return;
+
+              const isPast = item.date < actualToday;
+              const isToday = item.date.toDateString() === actualToday.toDateString();
+              const dateKey = item.date.toISOString().split('T')[0];
+              const log = workLogs[dateKey];
+              const shift = getShiftForDate(item.date);
+
+              if (log) {
+                if (log.status === 'normal') normal++;
+                if (log.status === 'overtime') { normal++; overtimeHours += (Number(log.hours) || 0); }
+                if (log.status === 'late' || log.status === 'partial_leave') { normal++; lateHours += (Number(log.hours) || 0); }
+                if (log.status === 'absent') absent++;
+                if (log.status === 'leave') leave++;
+              } 
+              // Otomatik Sayım
+              else if (isPast || isToday) {
+                if (!shift.isOffDay) {
+                  normal++; 
+                } else {
+                  weekendPaid++; // YENİ: Otomatik geçilen Hafta Tatillerini sayar
+                }
+              }
             });
 
             return (
@@ -350,6 +367,10 @@ export default function WorktimeCalendar() {
                 <div className="bg-[#1e2329] p-3 rounded-lg border border-base-300 text-center">
                   <p className="text-xs text-base-content/60 font-medium mb-1">Normal Mesai</p>
                   <p className="text-xl font-bold text-emerald-400">{normal} Gün</p>
+                </div>
+                <div className="bg-[#1e2329] p-3 rounded-lg border border-base-300 text-center">
+                  <p className="text-xs text-base-content/60 font-medium mb-1">Hafta Tatili</p>
+                  <p className="text-xl font-bold text-base-content">{weekendPaid} Gün</p>
                 </div>
                 <div className="bg-[#1e2329] p-3 rounded-lg border border-base-300 text-center">
                   <p className="text-xs text-base-content/60 font-medium mb-1">Fazla Mesai</p>
@@ -366,10 +387,6 @@ export default function WorktimeCalendar() {
                 <div className="bg-[#1e2329] p-3 rounded-lg border border-base-300 text-center">
                   <p className="text-xs text-base-content/60 font-medium mb-1">Eksik/Geç Saat</p>
                   <p className="text-xl font-bold text-warning">{lateHours} Saat</p>
-                </div>
-                <div className="bg-[#1e2329] p-3 rounded-lg border border-base-300 text-center">
-                  <p className="text-xs text-base-content/60 font-medium mb-1">Alınan Not</p>
-                  <p className="text-xl font-bold text-base-content">{notes} Adet</p>
                 </div>
               </>
             );
@@ -430,6 +447,17 @@ export default function WorktimeCalendar() {
                 <label className={`label justify-start gap-3 p-1 rounded-lg transition-colors ${isFutureDay ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-base-200'}`}>
                   <input type="radio" name="status" className="radio radio-sm" disabled={isFutureDay ?? false} checked={dayStatus === 'partial_leave'} onChange={() => handleStatusChange('partial_leave')} />
                   <span className="label-text text-sky-400 font-bold">Saatlik İzin / Erken Çıkma</span>
+                </label>
+                {/* YENİ: YILLIK İZİN */}
+                <label className="label cursor-pointer justify-start gap-3 p-1 hover:bg-base-200 rounded-lg transition-colors">
+                  <input type="radio" name="status" className="radio radio-sm" style={{accentColor: '#c084fc'}} checked={dayStatus === 'annual_leave'} onChange={() => handleStatusChange('annual_leave')} />
+                  <span className="label-text text-purple-400 font-bold">Yıllık İzin</span>
+                </label>
+
+                {/* YENİ: RESMİ TATİL MESAİSİ */}
+                <label className="label cursor-pointer justify-start gap-3 p-1 hover:bg-base-200 rounded-lg transition-colors">
+                  <input type="radio" name="status" className="radio radio-sm" style={{accentColor: '#fbbf24'}} checked={dayStatus === 'holiday_work'} onChange={() => handleStatusChange('holiday_work')} />
+                  <span className="label-text text-amber-400 font-bold">Resmi Tatil Mesaisi</span>
                 </label>
               </div>
             </div>

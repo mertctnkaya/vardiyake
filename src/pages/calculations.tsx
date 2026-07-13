@@ -13,13 +13,16 @@ export default function Calculations() {
 
   const [payrollDate, setPayrollDate] = useState(new Date());
   const [isLoadingPayroll, setIsLoadingPayroll] = useState(false);
+
   const [payrollData, setPayrollData] = useState({
     basePay: 0,
     overtimePay: 0,
     nightBonusPay: 0,
-    deductions: 0,
+    holidayWorkPay: 0, // YENİ: Resmi Tatil Mesaisi 
+    absentDeduction: 0, 
+    lateDeduction: 0,   
     netTotal: 0,
-    stats: { paidDays: 0, overtimeHours: 0, lateHours: 0, nightShifts: 0, absentDays: 0, weekendDays: 0 }
+    stats: { paidDays: 0, overtimeHours: 0, lateHours: 0, nightShifts: 0, absentDays: 0, weekendDays: 0, holidayWorkDays: 0 }
   });
 
   const calculateFromSalary = () => {
@@ -27,10 +30,8 @@ export default function Calculations() {
     if (!salary || salary <= 0) return;
 
     const dailyWage = salary / 30;
-    
     const baseHours = settings?.base_work_hours ? Number(settings.base_work_hours) : 7.5;
     const hourlyWage = dailyWage / baseHours;
-
     const overtimeWage = hourlyWage * 1.5;
 
     setCalcResults({
@@ -57,6 +58,9 @@ export default function Calculations() {
       setSettings(data);
       setFeedback({ type: 'success', message: 'Katsayılar ayarlarınıza başarıyla kaydedildi!' });
       setTimeout(() => setFeedback(null), 3000);
+    } else {
+      setFeedback({ type: 'error', message: 'Kaydedilirken bir hata oluştu.' });
+      setTimeout(() => setFeedback(null), 3000);
     }
     setIsSavingSettings(false);
   };
@@ -68,10 +72,7 @@ export default function Calculations() {
     try {
       const year = payrollDate.getFullYear();
       const month = payrollDate.getMonth();
-      
-      //const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      const daysInMonth = lastDay.getDate();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
 
       const firstDayStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
       const lastDayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
@@ -88,23 +89,39 @@ export default function Calculations() {
 
       const dailyWage = Number(settings.daily_wage) || 0;
       const hourlyOvertime = Number(settings.hourly_overtime) || 0;
-      const baseWorkHours = Number(settings.base_work_hours) || 7.5; // Bordrodan gelen 7.5
+      const baseWorkHours = Number(settings.base_work_hours) || 7.5; 
       const nightBonusPercent = Number(settings.night_bonus_percent) || 0;
+      const holidayMultiplier = Number(settings.holiday_multiplier) || 2; // YENİ
+
       const hourlyWage = dailyWage / baseWorkHours; 
       const hourlyNightBonus = hourlyWage * (nightBonusPercent / 100);
 
-      const epochDate = new Date((settings.shift_epoch_date || '2026-07-06') + 'T00:00:00');
+      const empDateStr = settings.employment_start_date || '2026-06-09';
+      const [eYear, eMonth, eDay] = empDateStr.split('-').map(Number);
+      const employmentStart = new Date(eYear, eMonth - 1, eDay);
+      
+      const epDateStr = settings.shift_epoch_date || '2026-07-06';
+      const [epYear, epMonth, epDay] = epDateStr.split('-').map(Number);
+      const epochDate = new Date(epYear, epMonth - 1, epDay);
+      
       const workType = settings.work_type || '3-shift';
       const isSaturdayWork = settings.is_saturday_workday || false;
       const MS_PER_WEEK = 1000 * 60 * 60 * 24 * 7;
 
-      let stats = { paidDays: 0, overtimeHours: 0, lateHours: 0, nightShifts: 0, absentDays: 0, weekendDays: 0 };
+      let stats = { paidDays: 0, overtimeHours: 0, lateHours: 0, nightShifts: 0, absentDays: 0, weekendDays: 0, holidayWorkDays: 0 };
       let overtimePay = 0;
-      let deductions = 0;
+      let holidayWorkPay = 0;
+      let absentDeduction = 0; 
+      let lateDeduction = 0;   
       
+      const actualToday = new Date();
+      actualToday.setHours(0, 0, 0, 0);
+
       for (let i = 1; i <= daysInMonth; i++) {
-        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
         const currentDate = new Date(year, month, i);
+        if (currentDate < employmentStart) continue;
+
+        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
         const log = logsMap[dateKey];
         
         const dayOfWeek = currentDate.getDay();
@@ -122,17 +139,18 @@ export default function Calculations() {
         
         let isNightShift = false;
         if (workType === '3-shift' && (((deltaWeeks % 3) + 3) % 3) === 1 && !isOffDay) isNightShift = true;
+        if (workType === '2-shift' && (((deltaWeeks % 2) + 2) % 2) === 1 && !isOffDay) isNightShift = true;
 
         if (log) {
           if (log.status === 'absent') {
             stats.absentDays += 1;
-            deductions += dailyWage; 
+            absentDeduction += dailyWage; 
           } 
           else if (log.status === 'late' || log.status === 'partial_leave') {
             stats.paidDays += 1;
             const hours = Number(log.hours) || 0;
             stats.lateHours += hours;
-            deductions += (hours * hourlyWage); 
+            lateDeduction += (hours * hourlyWage); 
             if (isNightShift) stats.nightShifts += 1; 
           } 
           else if (log.status === 'overtime') {
@@ -142,32 +160,43 @@ export default function Calculations() {
             overtimePay += (hours * hourlyOvertime);
             if (isNightShift) stats.nightShifts += 1;
           } 
-          else if (log.status === 'normal' || log.status === 'leave') {
+          else if (log.status === 'holiday_work') { // YENİ EKLENDİ
+            stats.paidDays += 1;
+            stats.holidayWorkDays += 1;
+            holidayWorkPay += (dailyWage * holidayMultiplier); // Normal yevmiyeye ek tatil yevmiyesi
+            if (isNightShift) stats.nightShifts += 1;
+          }
+          else if (log.status === 'normal' || log.status === 'leave' || log.status === 'annual_leave') {
             stats.paidDays += 1;
             if (isNightShift) stats.nightShifts += 1;
           }
         } else {
-          if (currentDate < new Date() && !isOffDay) {
-            stats.paidDays += 1;
-            if (isNightShift) stats.nightShifts += 1;
-          } else if (isOffDay) {
-            stats.weekendDays += 1;
+          // Log yoksa ama gün yaşanmışsa
+          if (currentDate <= actualToday) {
+            if (!isOffDay) {
+              stats.paidDays += 1;
+              if (isNightShift) stats.nightShifts += 1;
+            } else {
+              stats.weekendDays += 1;
+            }
           }
         }
       }
 
       const totalPaidDays = stats.paidDays + stats.weekendDays;
       const basePay = totalPaidDays * dailyWage;
-
       const nightBonusPay = stats.nightShifts * baseWorkHours * hourlyNightBonus;
+      const totalDeductions = lateDeduction; // Devamsızlık çift kesilmez
       
-      const netTotal = basePay + overtimePay + nightBonusPay - deductions;
+      const netTotal = basePay + overtimePay + holidayWorkPay + nightBonusPay - totalDeductions;
 
       setPayrollData({
         basePay: isNaN(basePay) ? 0 : basePay,
         overtimePay: isNaN(overtimePay) ? 0 : overtimePay,
         nightBonusPay: isNaN(nightBonusPay) ? 0 : nightBonusPay,
-        deductions: isNaN(deductions) ? 0 : deductions,
+        holidayWorkPay: isNaN(holidayWorkPay) ? 0 : holidayWorkPay,
+        absentDeduction: isNaN(absentDeduction) ? 0 : absentDeduction,
+        lateDeduction: isNaN(lateDeduction) ? 0 : lateDeduction,
         netTotal: isNaN(netTotal) ? 0 : netTotal,
         stats
       });
@@ -234,11 +263,11 @@ export default function Calculations() {
               <div className="bg-gradient-to-br from-indigo-900/40 to-[#16191d] rounded-2xl border border-indigo-500/30 p-8 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-32 bg-indigo-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
                 <div className="relative z-10">
-                  <p className="text-indigo-300 font-medium mb-1">Tahmini Net Hakediş (Vergi İstisnaları Dahil)</p>
+                  <p className="text-indigo-300 font-medium mb-1">Tahmini Net Hakediş</p>
                   <h1 className="text-5xl sm:text-6xl font-black text-white tracking-tight">
                     {payrollData.netTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-3xl text-indigo-400">₺</span>
                   </h1>
-                  <p className="text-sm text-base-content/50 mt-2">Bu tutar girdiğiniz günlük net yevmiye ({settings?.daily_wage} ₺) üzerinden hesaplanmıştır. BES veya İcra gibi özel kesintileri içermez.</p>
+                  <p className="text-sm text-base-content/50 mt-2">Bu tutar girdiğiniz günlük net yevmiye ({settings?.daily_wage} ₺) üzerinden hesaplanmıştır.</p>
                 </div>
               </div>
 
@@ -271,6 +300,15 @@ export default function Calculations() {
                       <span className="font-bold text-emerald-400">+{payrollData.overtimePay.toFixed(2)} ₺</span>
                     </div>
 
+                    {payrollData.stats.holidayWorkDays > 0 && (
+                      <div className="flex justify-between items-end border-b border-base-300/50 pb-2">
+                        <div>
+                          <p className="text-base-content/80 font-medium">Resmi Tatil Mesaisi ({payrollData.stats.holidayWorkDays} Gün)</p>
+                        </div>
+                        <span className="font-bold text-emerald-400">+{payrollData.holidayWorkPay.toFixed(2)} ₺</span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between items-end pb-2">
                       <div>
                         <p className="text-base-content/80 font-medium">Gece Zammı ({payrollData.stats.nightShifts} Gece - %{settings?.night_bonus_percent || 0})</p>
@@ -280,7 +318,7 @@ export default function Calculations() {
                   </div>
                 </div>
 
-                <div className="bg-[#16191d] rounded-xl border border-base-300 p-6 shadow-lg">
+                <div className="bg-[#16191d] rounded-xl border border-base-300 p-6 shadow-lg relative">
                   <h4 className="font-bold text-red-400 mb-4 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
                     Kesintiler
@@ -290,8 +328,8 @@ export default function Calculations() {
                       <div>
                         <p className="text-base-content/80 font-medium">Devamsızlık ({payrollData.stats.absentDays} Gün)</p>
                       </div>
-                      <span className="font-bold text-red-400">
-                        {payrollData.stats.absentDays > 0 ? '-' : ''}{(payrollData.stats.absentDays * (Number(settings?.daily_wage) || 0)).toFixed(2)} ₺
+                      <span className="font-bold text-base-content/40 line-through">
+                        {payrollData.absentDeduction > 0 ? '-' : ''}{payrollData.absentDeduction.toFixed(2)} ₺
                       </span>
                     </div>
                     
@@ -300,9 +338,13 @@ export default function Calculations() {
                         <p className="text-base-content/80 font-medium">Geç Kalma / Erken Çıkma ({payrollData.stats.lateHours} Saat)</p>
                       </div>
                       <span className="font-bold text-red-400">
-                        {payrollData.deductions > 0 ? '-' : ''}{payrollData.deductions.toFixed(2)} ₺
+                        {payrollData.lateDeduction > 0 ? '-' : ''}{payrollData.lateDeduction.toFixed(2)} ₺
                       </span>
                     </div>
+                  </div>
+                  
+                  <div className="mt-4 text-xs text-warning/80 bg-warning/10 p-2 rounded leading-tight">
+                    * İşlenmeyen devamsızlık kesintisi: Devamsız olduğunuz günler zaten hakedişinize (Normal Mesai günlerine) eklenmediği için, maaşınızdan ikinci kez <strong>kesilmez.</strong> Sadece bilgi amaçlı gösterilir.
                   </div>
                 </div>
 
@@ -316,15 +358,15 @@ export default function Calculations() {
         <div className="w-full max-w-4xl bg-[#16191d] rounded-xl shadow-2xl border border-base-300 p-6 sm:p-8 animate-fade-in">
           
           {feedback && (
-            <div className={`alert ${feedback.type === 'success' ? 'alert-success bg-green-900/30 text-green-400 border-green-500/30' : 'alert-error bg-red-900/30 text-red-400 border-red-500/30'} mb-6 shadow-sm border`}>
-              <span>{feedback.message}</span>
+            <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 border shadow-sm ${feedback.type === 'success' ? 'bg-green-900/30 border-green-500/30 text-green-400' : 'bg-red-900/30 border-red-500/30 text-red-400'}`}>
+              <span className="font-medium">{feedback.message}</span>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <h3 className="text-xl font-bold text-indigo-400 mb-2">Hedef Net Maaşınız</h3>
-              <p className="text-sm text-base-content/60 mb-6">Devlet istisnaları (eski AGİ) dahil edilmiş aylık net gelirinizi yazın, sistem 30 gün üzerinden günlük yevmiyenizi hesaplasın.</p>
+              <p className="text-sm text-base-content/60 mb-6">Aylık net gelirinizi yazın, sistem 30 gün üzerinden günlük yevmiyenizi hesaplasın.</p>
               
               <div className="form-control w-full mb-4">
                 <label className="input input-bordered flex items-center gap-2 bg-[#1e2329] focus-within:ring-2 focus-within:ring-indigo-500 border-base-300 h-14">

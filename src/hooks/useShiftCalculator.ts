@@ -34,14 +34,24 @@ export function useShiftCalculator() {
     
     const shift = { ...SHIFTS[shiftIndex] };
 
+    // EĞER PAZAR GÜNÜYSE:
     if (dayOfWeek === 0) {
       shift.name = 'Hafta Tatili';
+      shift.id = -1; 
       
+      // Bir sonraki haftanın vardiyasını hesapla
       const nextWeekIndex = (((deltaWeeks + 1) % 3) + 3) % 3;
       const nextShift = SHIFTS[nextWeekIndex];
       
-      shift.note = nextShift.id === 1 ? nextShift.note : '';
-      shift.id = nextShift.id === 1 ? 1 : -1; 
+      // SADECE Pazar günü ve bir sonraki hafta Gece ise uyarıyı göster
+      if (nextShift.id === 1) {
+        shift.note = 'DİKKAT: Bu gece akşamından servise biniş!';
+      } else {
+        shift.note = ''; 
+      }
+    } else {
+      // PAZAR DEĞİLSE: Hiçbir şekilde gece uyarısı gösterme
+      shift.note = '';
     }
 
     return shift;
