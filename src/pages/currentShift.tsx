@@ -127,6 +127,34 @@ export default function CurrentShift() {
         </div>
       </div>
 
+      {/* ========================================= */}
+      {/* HATIRLATMALAR (REMINDERS) MODÜLÜ          */}
+      {/* ========================================= */}
+      <div className="md:col-span-2 mt-8 bg-[#1e2329] rounded-xl border border-base-300 shadow-xl overflow-hidden animate-fade-in">
+        <div className="bg-base-200 border-b border-base-300 p-4 flex justify-between items-center">
+          <h3 className="font-bold text-lg flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            Hatırlatmalar
+          </h3>
+          <button className="btn btn-sm btn-outline hover:bg-indigo-600 hover:text-white border-base-content/20">
+            + Yeni Hatırlatma
+          </button>
+        </div>
+        
+        <div className="p-6">
+          {/* Şimdilik Statik Görünüm */}
+          <div className="text-center py-8">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-3 text-base-content/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <p className="text-base-content/50 font-medium">Planlanan hatırlatma yok.</p>
+            <p className="text-sm text-base-content/40 mt-1">Önemli notlarınızı ve tarih bazlı görevlerinizi buraya ekleyebilirsiniz.</p>
+          </div>
+        </div>
+      </div>
+
       {/* Kayıt Ol/Giriş Yap Kutusu (Kullanıcı Yoksa) */}
       {!user && (
         <div className="md:col-span-2 mt-2 bg-indigo-900/10 border border-indigo-500/20 rounded-2xl p-6 sm:p-8 text-center shadow-lg">
