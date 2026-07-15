@@ -19,14 +19,15 @@ export default function Settings() {
   const [shiftEndTime, setShiftEndTime] = useState('16:00'); 
   const [shiftDuration, setShiftDuration] = useState('12'); 
   
-  const [dailyWage, setDailyWage] = useState('');
+  // DÜZELTME: Günlük yevmiye yerine doğrudan "Aylık Brüt" alıyoruz
+  const [monthlyGross, setMonthlyGross] = useState('');
   const [hourlyOvertime, setHourlyOvertime] = useState('');
   const [baseWorkHours, setBaseWorkHours] = useState('7.5'); 
-  const [nightBonus, setNightBonus] = useState('0'); 
+  const [nightBonus, setNightBonus] = useState('10'); 
   
   const [saturdayMultiplier, setSaturdayMultiplier] = useState('1.5'); 
-  const [weekendMultiplier, setWeekendMultiplier] = useState('2'); // Pazar için
-  const [holidayMultiplier, _setHolidayMultiplier] = useState('2'); // Resmi Tatil
+  const [weekendMultiplier, setWeekendMultiplier] = useState('2'); 
+  const [holidayMultiplier, _setHolidayMultiplier] = useState('2'); 
 
   useEffect(() => {
     async function loadSettings() {
@@ -42,14 +43,14 @@ export default function Settings() {
         if (data.shift_start_time) setShiftStartTime(data.shift_start_time);
         if (data.shift_end_time) setShiftEndTime(data.shift_end_time);
         if (data.shift_duration) setShiftDuration(data.shift_duration.toString());
-        if (data.daily_wage) setDailyWage(data.daily_wage.toString());
         if (data.hourly_overtime) setHourlyOvertime(data.hourly_overtime.toString());
         if (data.base_work_hours) setBaseWorkHours(data.base_work_hours.toString());
         if (data.night_bonus_percent) setNightBonus(data.night_bonus_percent.toString());
-        
-        // Veritabanından çek
         if (data.saturday_multiplier) setSaturdayMultiplier(data.saturday_multiplier.toString());
         if (data.weekend_multiplier) setWeekendMultiplier(data.weekend_multiplier.toString());
+        
+        // Veritabanındaki daily_wage'i 30 ile çarpıp kullanıcıya "Aylık Brüt" olarak gösteriyoruz
+        if (data.daily_wage) setMonthlyGross((data.daily_wage * 30).toFixed(2).replace(/\.00$/, ''));
       }
       setIsLoading(false);
     }
@@ -72,21 +73,8 @@ export default function Settings() {
     }
     setFeedback(null);
 
-    // KONTROLLER...
-    if (dailyWage === '' || hourlyOvertime === '' || baseWorkHours === '') {
-      setFeedback({ type: 'error', message: 'Lütfen ücret ve çalışma süresi alanlarını boş bırakmayın.' });
-      window.scrollTo({ top: 0, behavior: 'smooth' }); return;
-    }
-    if (Number(dailyWage) < 0 || Number(hourlyOvertime) < 0 || Number(nightBonus) < 0) {
-      setFeedback({ type: 'error', message: 'Ücret ve zam oranları negatif (-) olamaz.' });
-      window.scrollTo({ top: 0, behavior: 'smooth' }); return;
-    }
-    if (Number(weekendMultiplier) < 1 || Number(saturdayMultiplier) < 1) {
-      setFeedback({ type: 'error', message: 'Tatil çarpanları en az 1 olmalıdır.' });
-      window.scrollTo({ top: 0, behavior: 'smooth' }); return;
-    }
-    if (!shiftStartTime || (workType === 'fixed' && !shiftEndTime)) {
-      setFeedback({ type: 'error', message: 'Lütfen başlangıç ve bitiş saatlerini eksiksiz girin.' });
+    if (monthlyGross === '' || hourlyOvertime === '' || baseWorkHours === '') {
+      setFeedback({ type: 'error', message: 'Lütfen maaş ve çalışma süresi alanlarını boş bırakmayın.' });
       window.scrollTo({ top: 0, behavior: 'smooth' }); return;
     }
 
@@ -104,7 +92,8 @@ export default function Settings() {
       shift_start_time: shiftStartTime,
       shift_end_time: finalEndTime, 
       shift_duration: workType === '2-shift' ? Number(shiftDuration) : (workType === '3-shift' ? 8 : 0),
-      daily_wage: Number(dailyWage),
+      // Sistemin beyni "Günlük Brüt" ile çalışır. Kullanıcının girdiği Aylık Brüt'ü 30'a bölüp kaydediyoruz.
+      daily_wage: Number(monthlyGross) / 30, 
       hourly_overtime: Number(hourlyOvertime),
       base_work_hours: Number(baseWorkHours),
       night_bonus_percent: Number(nightBonus) || 0,
@@ -150,10 +139,9 @@ export default function Settings() {
               Önemli İpuçları
             </h4>
             <ul className="list-disc list-inside space-y-1.5 opacity-90">
-              <li><strong className="text-indigo-300">Normal Çalışma Saati:</strong> Çay ve yemek molalarını <em>çıkararak</em> sadece net çalıştığınız süreyi yazmalısınız.</li>
-              <li><strong className="text-indigo-300">Saatlik Mesai:</strong> Toplamı değil, sadece 1 saatlik mesai ücretinizi girmelisiniz. (Bilmiyorsanız Hesaplamalar sekmesinden bulabilirsiniz).</li>
               <li><strong className="text-indigo-300">Tarihler:</strong> İşe giriş tarihi takvim içindir, net tarih gerekli değildir. Döngü için geçmişteki işe başladıktan sonraki ilk Gündüz pazartesi gününü seçmelisiniz.</li>
-              <li><strong className="text-indigo-300">Ücretler:</strong> Henüz yevmiye veya saatliğinizi bilmiyorsanız hesaplamalardan net maaşınız ile bulabilirsiniz.</li>
+              <li><strong className="text-indigo-300">Normal Çalışma Saati:</strong> Çay ve yemek molalarını <em>çıkararak</em> sadece net çalıştığınız süreyi yazmalısınız. (Örn: 7.5)</li>
+              <li><strong className="text-indigo-300">Aylık Brüt Maaş:</strong> Sistemin ana motorudur. Lütfen net değil, sözleşmenizdeki <strong className="text-white">Brüt Tutarı</strong> yazın. Brüt bilmiyorsanız hesaplamalardan netten brüte hesaplayın.</li>
             </ul>
           </div>
         </div>
@@ -201,18 +189,6 @@ export default function Settings() {
                   <input type="number" className="input input-bordered w-full bg-base-200 focus:ring-2 focus:ring-indigo-500" placeholder="Örn: 12" value={shiftDuration} onChange={(e) => setShiftDuration(e.target.value)} />
                 </div>
               )}
-
-              {workType === 'fixed' && (
-                <div className="form-control w-full md:col-span-2 bg-base-200/50 p-4 rounded-lg border border-base-300 mt-2">
-                  <label className="cursor-pointer label justify-start gap-4">
-                    <input type="checkbox" className="checkbox checkbox-primary" checked={isSaturdayWorkday} onChange={(e) => setIsSaturdayWorkday(e.target.checked)} />
-                    <div>
-                      <span className="label-text font-bold block">Cumartesi günleri normal mesai günüm</span>
-                      <span className="label-text-alt text-base-content/60">İşaretlenmezse Cumartesi günleri takvimde hafta sonu tatili olarak sayılır.</span>
-                    </div>
-                  </label>
-                </div>
-              )}
             </div>
           </div>
 	
@@ -235,15 +211,15 @@ export default function Settings() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               
               <div className="form-control w-full">
-                <label className="label"><span className="label-text font-bold text-base-content/80">Günlük Yevmiye (₺)</span></label>
-                <label className="input input-bordered flex items-center gap-2 bg-base-200">
-                  <span className="text-base-content/50">₺</span>
-                  <input type="number" className="grow" value={dailyWage} onChange={(e) => setDailyWage(e.target.value)} />
+                <label className="label"><span className="label-text font-bold text-base-content/80">Aylık Brüt Maaş (₺)</span></label>
+                <label className="input input-bordered flex items-center gap-2 bg-base-200 border-indigo-500/50">
+                  <span className="text-indigo-400 font-bold">₺</span>
+                  <input type="number" className="grow font-bold text-white" value={monthlyGross} onChange={(e) => setMonthlyGross(e.target.value)} />
                 </label>
               </div>
 
               <div className="form-control w-full">
-                <label className="label"><span className="label-text font-bold text-base-content/80">Saatlik Mesai (₺)</span></label>
+                <label className="label"><span className="label-text font-bold text-base-content/80">Saatlik Mesai (Brüt)</span></label>
                 <label className="input input-bordered flex items-center gap-2 bg-base-200">
                   <span className="text-base-content/50">₺</span>
                   <input type="number" className="grow" value={hourlyOvertime} onChange={(e) => setHourlyOvertime(e.target.value)} />
@@ -263,24 +239,6 @@ export default function Settings() {
                 </label>
               </div>
 
-              <div className="form-control w-full">
-                <label className="label"><span className="label-text font-bold text-base-content/80">Cumartesi Mesai Çarpanı</span></label>
-                <label className="input input-bordered flex items-center gap-2 bg-base-200">
-                  <span className="text-base-content/50">x</span>
-                  <input type="number" step="0.5" className="grow" placeholder="Örn: 1.5" value={saturdayMultiplier} onChange={(e) => setSaturdayMultiplier(e.target.value)} />
-                </label>
-                <label className="label"><span className="label-text-alt text-base-content/50">%50 Zamlı = 1.5</span></label>
-              </div>
-
-              <div className="form-control w-full">
-                <label className="label"><span className="label-text font-bold text-base-content/80">Pazar / Tatil Çarpanı</span></label>
-                <label className="input input-bordered flex items-center gap-2 bg-base-200">
-                  <span className="text-base-content/50">x</span>
-                  <input type="number" step="0.5" className="grow" placeholder="Örn: 2" value={weekendMultiplier} onChange={(e) => setWeekendMultiplier(e.target.value)} />
-                </label>
-                <label className="label"><span className="label-text-alt text-base-content/50">Çift Yevmiye = 2.0</span></label>
-              </div>
-
             </div>
           </div>
 
@@ -290,50 +248,8 @@ export default function Settings() {
             </button>
           </div>
 
-          {/* ========================================================= */}
-          {/* YILLIK İZİN HAK EDİŞ TABLOSU (TÜRKİYE KANUNLARI) */}
-          {/* ========================================================= */}
-          <div className="mt-8 border-t border-base-300 pt-8 animate-fade-in">
-             <h3 className="text-lg font-bold text-indigo-400 mb-4 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                </svg>
-                Yıllık İzin Durumu
-             </h3>
-             
-             {(() => {
-                const start = new Date(employmentStartDate);
-                const today = new Date();
-                const yearsWorked = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
-                
-                let earnedLeave = 0;
-                for (let i = 1; i <= yearsWorked; i++) {
-                   if (i <= 5) earnedLeave += 14;
-                   else if (i < 15) earnedLeave += 20;
-                   else earnedLeave += 26;
-                }
-
-                return (
-                  <div className="bg-[#1e2329] p-6 rounded-xl border border-base-300 flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div>
-                      <p className="text-sm text-base-content/70">Mevcut Kıdeminiz</p>
-                      <p className="text-2xl font-bold text-base-content">{yearsWorked} Yıl</p>
-                    </div>
-                    <div className="divider sm:divider-horizontal"></div>
-                    <div>
-                      <p className="text-sm text-base-content/70">Kanuni Hak Edilen Toplam İzin</p>
-                      <p className="text-2xl font-bold text-purple-400">{earnedLeave} Gün</p>
-                    </div>
-                    <div className="w-full sm:w-auto text-sm text-base-content/50 italic bg-base-100 p-3 rounded-lg border border-base-300">
-                      * 1-5 yıl: 14 Gün <br/> * 5-15 yıl: 20 Gün <br/> * 15+ yıl: 26 Gün baz alınmıştır.
-                    </div>
-                  </div>
-                );
-             })()}
-          </div>
         </div>
       </div>
-      
     </div>
   );
 }
