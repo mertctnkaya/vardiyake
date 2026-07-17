@@ -19,7 +19,6 @@ export default function Settings() {
   const [shiftEndTime, setShiftEndTime] = useState('16:00'); 
   const [shiftDuration, setShiftDuration] = useState('12'); 
   
-  // DÜZELTME: Günlük yevmiye yerine doğrudan "Aylık Brüt" alıyoruz
   const [monthlyGross, setMonthlyGross] = useState('');
   const [hourlyOvertime, setHourlyOvertime] = useState('');
   const [baseWorkHours, setBaseWorkHours] = useState('7.5'); 
@@ -73,7 +72,7 @@ export default function Settings() {
     }
     setFeedback(null);
 
-    if (monthlyGross === '' || hourlyOvertime === '' || baseWorkHours === '') {
+    if (monthlyGross === '' || baseWorkHours === '') {
       setFeedback({ type: 'error', message: 'Lütfen maaş ve çalışma süresi alanlarını boş bırakmayın.' });
       window.scrollTo({ top: 0, behavior: 'smooth' }); return;
     }
@@ -92,7 +91,6 @@ export default function Settings() {
       shift_start_time: shiftStartTime,
       shift_end_time: finalEndTime, 
       shift_duration: workType === '2-shift' ? Number(shiftDuration) : (workType === '3-shift' ? 8 : 0),
-      // Sistemin beyni "Günlük Brüt" ile çalışır. Kullanıcının girdiği Aylık Brüt'ü 30'a bölüp kaydediyoruz.
       daily_wage: Number(monthlyGross) / 30, 
       hourly_overtime: Number(hourlyOvertime),
       base_work_hours: Number(baseWorkHours),
@@ -141,7 +139,7 @@ export default function Settings() {
             <ul className="list-disc list-inside space-y-1.5 opacity-90">
               <li><strong className="text-indigo-300">Tarihler:</strong> İşe giriş tarihi takvim içindir, net tarih gerekli değildir. Döngü için geçmişteki işe başladıktan sonraki ilk Gündüz pazartesi gününü seçmelisiniz.</li>
               <li><strong className="text-indigo-300">Normal Çalışma Saati:</strong> Çay ve yemek molalarını <em>çıkararak</em> sadece net çalıştığınız süreyi yazmalısınız. (Örn: 7.5)</li>
-              <li><strong className="text-indigo-300">Aylık Brüt Maaş:</strong> Sistemin ana motorudur. Lütfen net değil, sözleşmenizdeki <strong className="text-white">Brüt Tutarı</strong> yazın. Brüt bilmiyorsanız hesaplamalardan netten brüte hesaplayın.</li>
+              <li><strong className="text-indigo-300">Aylık Brüt Maaş:</strong> Sistemin ana motorudur. Lütfen net değil, sözleşmenizdeki <strong className="text-white">Brüt Tutarı</strong> yazın. Brüt bilmiyorsanız Hesaplamalar sekmesinden "Katsayı Bul" aracını kullanın.</li>
             </ul>
           </div>
         </div>
@@ -191,7 +189,7 @@ export default function Settings() {
               )}
             </div>
           </div>
-	
+  
           <div>
             <h3 className="text-lg font-bold text-indigo-400 mb-4 border-b border-base-300 pb-2">2. Tarih Referansları</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -199,10 +197,14 @@ export default function Settings() {
                 <label className="label"><span className="label-text font-bold text-base-content/80">İşe Başlama Tarihi</span></label>
                 <input type="date" className="input input-bordered w-full bg-base-200 focus:ring-2 focus:ring-indigo-500" value={employmentStartDate} onChange={(e) => setEmploymentStartDate(e.target.value)} />
               </div>
-              <div className="form-control w-full">
-                <label className="label"><span className="label-text font-bold text-base-content/80">Döngü Başlangıcı (Gündüz)</span></label>
-                <input type="date" className="input input-bordered w-full bg-base-200 focus:ring-2 focus:ring-indigo-500" value={shiftEpochDate} onChange={(e) => setShiftEpochDate(e.target.value)} />
-              </div>
+              
+              {/* Sabit Vardiya Seçildiğinde Döngü Başlangıcı Gizlenir */}
+              {workType !== 'fixed' && (
+                <div className="form-control w-full animate-fade-in">
+                  <label className="label"><span className="label-text font-bold text-base-content/80">Döngü Başlangıcı (Gündüz)</span></label>
+                  <input type="date" className="input input-bordered w-full bg-base-200 focus:ring-2 focus:ring-indigo-500" value={shiftEpochDate} onChange={(e) => setShiftEpochDate(e.target.value)} />
+                </div>
+              )}
             </div>
           </div>
           
@@ -219,10 +221,12 @@ export default function Settings() {
               </div>
 
               <div className="form-control w-full">
-                <label className="label"><span className="label-text font-bold text-base-content/80">Saatlik Mesai (Brüt)</span></label>
+                <label className="label">
+                  <span className="label-text font-bold text-base-content/80">Saatlik Mesai (Brüt)</span>
+                </label>
                 <label className="input input-bordered flex items-center gap-2 bg-base-200">
                   <span className="text-base-content/50">₺</span>
-                  <input type="number" className="grow" value={hourlyOvertime} onChange={(e) => setHourlyOvertime(e.target.value)} />
+                  <input type="number" className="grow" placeholder="Oto hesaplanır" value={hourlyOvertime} onChange={(e) => setHourlyOvertime(e.target.value)} />
                 </label>
               </div>
 
